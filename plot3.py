@@ -47,8 +47,10 @@ def reveal_stats(s, label):
     final    = s.iloc[-1]
     five_ago = s.iloc[-61]
     ten_ago  = s.iloc[-121]
+    eight_ago = s.iloc[-97]
     pct_5yr  = (final - five_ago) / final
     pct_10yr = (final - ten_ago) / final
+    pct_8yr  = (final - eight_ago) / final
     cross = s[s >= 0.03 * final].index[0]
     years_to_reveal = (cross - s.index[0]).days / 365.25      # years IN to the crossing
     years_after     = (s.index[-1] - cross).days / 365.25     # years still to run after it
@@ -59,8 +61,10 @@ def reveal_stats(s, label):
     print(f"Created in last 10 years:       {pct_10yr:.0%} of it")
     print(f"Hit 3% of final value in {cross:%b %Y} — "
           f"{years_to_reveal:.1f} years in, {years_after:.1f} years still to run.\n")
+    print(f"Last 8 years: {pct_8yr:.0%} of final value, "
+          f"from {97/len(s):.0%} of the contributions")
 
-    return dict(final=final, cross=cross, pct_5yr=pct_5yr,
+    return dict(final=final, cross=cross, pct_5yr=pct_5yr, pct_8yr=pct_8yr,
                 years_to_reveal=years_to_reveal, years_after=years_after)
 
 stats_flat   = reveal_stats(s_flat, "Flat SIP")
