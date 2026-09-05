@@ -228,4 +228,4 @@ fig.add_annotation(
     font=dict(size=10.5, color=MUTED), xanchor="right",
 )
 
-fig.write_image("sip_portfolio_v4.png", scale=2)
+fig.write_image("sip_portfolio.png", scale=2)

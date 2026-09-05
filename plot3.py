@@ -139,5 +139,5 @@ fig.suptitle("The reveal happens late - no matter how you contribute",
              color='#E5E7EB', fontsize=18, fontweight='bold', y=0.995)
 
 plt.tight_layout(rect=[0, 0, 1, 0.97])
-plt.savefig('day29_reveal_chart_both.png', dpi=150, facecolor=BG)
-plt.show()
+plt.savefig('day29_reveal_chart.png', dpi=150, facecolor=BG)
+#plt.show()

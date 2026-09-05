@@ -1,102 +1,121 @@
 import plotly.graph_objects as go
 
-# --- Data derived from AMFI Annual Report FY26 (holding period of SIP AUM, March 2026) ---
-years = [0, 1, 2, 3, 4, 5]
-direct_survival  = [100, 71, 51, 38, 28, 20]
-regular_survival = [100, 81, 66, 53, 42, 34]
-x_labels = ['Start', '1 yr', '2 yrs', '3 yrs', '4 yrs', '5 yrs']
+# ============================================================
+# Data: AMFI Annual Report, Fiscal 2026, p.8
+# "Holding period of SIP AUM as of March 2025 and March 2026"
+# These are the ACTUAL published figures. Each column sums to 100% —
+# it's a composition snapshot of the money sitting in SIPs as of
+# March 2026, NOT a survival/decay curve of a single cohort.
+# ============================================================
+buckets = [
+    "< 1 year",
+    "1–2 years",
+    "2–3 years",
+    "3–4 years",
+    "4–5 years",
+    "> 5 years",
+]
 
-COL_REGULAR = '#5EEAD4'
-COL_DIRECT  = '#FB923C'
-BG          = '#0B0E14'
-GRID        = '#22262E'
-MUTED       = '#9CA3AF'
+# Order: bottom of the stack -> top
+direct_mar26  = [29, 20, 14, 10,  7, 20]   # sums to 100
+regular_mar26 = [19, 15, 13, 11,  8, 34]   # sums to 100
+
+plans = ["Direct plan<br>(self-directed)", "Regular plan<br>(via distributor)"]
+
+# --- Sanity check: the whole point of this chart is that the numbers are real ---
+assert sum(direct_mar26) == 100, "Direct column must sum to 100%"
+assert sum(regular_mar26) == 100, "Regular column must sum to 100%"
+
+BG    = "#0B0E14"
+GRID  = "#22262E"
+MUTED = "#9CA3AF"
+FONT  = "Poppins, Helvetica, Arial, sans-serif"
+
+# Ramp from amber (newest money) through neutral to teal (oldest money).
+# Teal = the "still here after 5 years" bucket, matching the colour used
+# for the winning lines in the portfolio charts.
+BUCKET_COLORS = [
+    "#FB923C",   # < 1 year   — amber
+    "#F0A868",   # 1–2
+    "#9CA3AF",   # 2–3        — neutral grey
+    "#6B8F91",   # 3–4
+    "#3FBFAE",   # 4–5
+    "#5EEAD4",   # > 5 years  — teal
+]
 
 fig = go.Figure()
 
-# --- Fills added FIRST so the lines/markers render crisply on top ---
+for i, bucket in enumerate(buckets):
+    values = [direct_mar26[i], regular_mar26[i]]
+    is_top = (i == len(buckets) - 1)
+    fig.add_trace(go.Bar(
+        x=plans, y=values, name=bucket,
+        marker=dict(
+            color=BUCKET_COLORS[i],
+            line=dict(color=BG, width=1.5),
+        ),
+        text=[f"<b>{v}%</b>" for v in values],
+        textposition="inside",
+        insidetextanchor="middle",
+        textfont=dict(
+            color=BG if is_top or i >= 4 else BG,
+            size=15 if is_top else 13,
+            family=FONT,
+        ),
+        hovertemplate="%{x}<br>" + bucket + ": <b>%{y}%</b><extra></extra>",
+    ))
 
-# Orange fill under the direct-plan curve, down to zero (mirrors the teal band)
-fig.add_trace(go.Scatter(
-    x=years + years[::-1],
-    y=direct_survival + [0]*len(years),
-    fill='toself', fillcolor='rgba(251, 146, 60, 0.07)',
-    line=dict(width=0), showlegend=False, hoverinfo='skip'
-))
-
-# Teal band between the two curves
-fig.add_trace(go.Scatter(
-    x=years + years[::-1],
-    y=regular_survival + direct_survival[::-1],
-    fill='toself', fillcolor='rgba(94, 234, 212, 0.06)',
-    line=dict(width=0), showlegend=False, hoverinfo='skip'
-))
-
-fig.add_trace(go.Scatter(
-    x=years, y=regular_survival, mode='lines+markers',
-    name='Regular plan (via distributor)',
-    line=dict(color=COL_REGULAR, width=3.5, shape='spline', smoothing=0.3),
-    marker=dict(size=9, color=BG, line=dict(color=COL_REGULAR, width=2.5)),
-))
-
-fig.add_trace(go.Scatter(
-    x=years, y=direct_survival, mode='lines+markers',
-    name='Direct plan (self-directed)',
-    line=dict(color=COL_DIRECT, width=3.5, shape='spline', smoothing=0.3),
-    marker=dict(size=9, color=BG, line=dict(color=COL_DIRECT, width=2.5)),
-))
-
-# --- Data labels ---
-for i, (x, y) in enumerate(zip(years, regular_survival)):
-    xshift, yshift = (26, 8) if i == 0 else (0, 18)
-    fig.add_annotation(x=x, y=y, text=f'<b>{y}%</b>', showarrow=False,
-                        xshift=xshift, yshift=yshift,
-                        font=dict(color=COL_REGULAR, size=14),
-                        bgcolor='rgba(11,14,20,0.75)', borderpad=2)
-
-for i, (x, y) in enumerate(zip(years, direct_survival)):
-    xshift, yshift = (26, -20) if i == 0 else (0, -22)
-    fig.add_annotation(x=x, y=y, text=f'<b>{y}%</b>', showarrow=False,
-                        xshift=xshift, yshift=yshift,
-                        font=dict(color=COL_DIRECT, size=14),
-                        bgcolor='rgba(11,14,20,0.75)', borderpad=2)
-
-# --- Callout: anchored to the actual (5, 20) point, but pushed into empty space via PIXEL offsets ---
-# (no axref/ayref override -> defaults to 'pixel', which is relative and predictable,
-#  unlike data-coordinate anchoring which is what caused the overlap last time)
+# --- Callout on the > 5 years bucket, which is the whole story ---
 fig.add_annotation(
-    x=5, y=20,                      # the point being called out
-    ax=-175, ay=-70,                # text box pushed left + up, in pixels, away from the label
-    text="<b>Only 1 in 5 direct-plan<br>SIPs survive 5 years</b>",
-    showarrow=True, arrowhead=0, arrowcolor=COL_DIRECT, arrowwidth=1.3,
-    font=dict(color=COL_DIRECT, size=13), align='left',
-    bgcolor='rgba(11,14,20,0.9)', bordercolor=COL_DIRECT, borderwidth=1, borderpad=6
+    x=0, y=83, ax=-30, ay=-60,
+    text="<b>Only 20% of direct-plan SIP money<br>has been invested 5+ years</b>",
+    showarrow=True, arrowhead=0, arrowcolor="#5EEAD4", arrowwidth=1.3,
+    font=dict(color="#5EEAD4", size=13), align="left",
+    bgcolor="rgba(11,14,20,0.92)", bordercolor="#5EEAD4", borderwidth=1, borderpad=6,
+)
+
+fig.add_annotation(
+    x=1, y=83, ax=60, ay=-70,
+    text="<b>34% for regular plans</b>",
+    showarrow=True, arrowhead=0, arrowcolor="#5EEAD4", arrowwidth=1.3,
+    font=dict(color="#5EEAD4", size=13), align="left",
+    bgcolor="rgba(11,14,20,0.92)", bordercolor="#5EEAD4", borderwidth=1, borderpad=6,
 )
 
 fig.update_layout(
-    title=dict(text="Most SIP investors quit long before compounding pays off",
-               font=dict(size=22, color='#F3F4F6', family='Poppins, Helvetica, Arial, sans-serif'),
-               x=0.5, xanchor='center', y=0.96),
+    barmode="stack",
+    bargap=0.55,
+    title=dict(
+        text="How long has SIP money actually been invested?",
+        font=dict(size=22, color="#F3F4F6", family=FONT),
+        x=0.5, xanchor="center", y=0.955,
+    ),
     plot_bgcolor=BG, paper_bgcolor=BG,
-    font=dict(family='Poppins, Helvetica, Arial, sans-serif', color='#E5E7EB', size=13),
-    xaxis=dict(tickmode='array', tickvals=years, ticktext=x_labels,
-               title=dict(text="Time since starting a SIP", font=dict(color=MUTED, size=13)),
-               gridcolor=GRID, showline=True, linecolor=GRID, zeroline=False,
-               range=[-0.3, 5.9]),
-    yaxis=dict(title=dict(text="Still invested (% of SIP AUM)", font=dict(color=MUTED, size=13)),
-               ticksuffix='%', range=[0, 112],
-               gridcolor=GRID, showline=False, zeroline=False),
-    legend=dict(bgcolor='rgba(0,0,0,0)', bordercolor='rgba(0,0,0,0)',
-                x=0.99, y=1.12, xanchor='right', yanchor='top',
-                orientation='h', font=dict(size=12)),
-    margin=dict(t=110, b=90, l=70, r=40),
+    font=dict(family=FONT, color="#E5E7EB", size=13),
+    xaxis=dict(
+        tickfont=dict(size=15, color="#E5E7EB"),
+        showgrid=False, showline=True, linecolor=GRID, zeroline=False,
+    ),
+    yaxis=dict(
+        title=dict(text="Share of SIP AUM", font=dict(color=MUTED, size=13)),
+        ticksuffix="%", range=[0, 100], dtick=20,
+        gridcolor=GRID, showline=False, zeroline=False,
+    ),
+    legend=dict(
+        title=dict(text="Held for:", font=dict(color=MUTED, size=12)),
+        bgcolor="rgba(0,0,0,0)", bordercolor="rgba(0,0,0,0)",
+        x=1.02, y=1.0, xanchor="left", yanchor="top",
+        orientation="v", font=dict(size=13),
+        traceorder="reversed",     # top of the stack appears at top of the legend
+    ),
+    margin=dict(t=110, b=95, l=80, r=200),
     width=1200, height=720,
 )
 
 fig.add_annotation(
-    text="Source: AMFI Annual Report, Fiscal 2026  ·  holding period of SIP AUM, March 2026",
-    showarrow=False, x=1, y=-0.145, xref='paper', yref='paper',
-    font=dict(size=10.5, color=MUTED), xanchor='right'
+    text="Source: AMFI Annual Report, Fiscal 2026  ·  holding period of SIP AUM as of March 2026  ·  each column sums to 100%",
+    showarrow=False, x=1, y=-0.13, xref="paper", yref="paper",
+    font=dict(size=10.5, color=MUTED), xanchor="right",
 )
 
-fig.write_image("sip_retention_funnel_v3.png", scale=2)
+fig.write_image("sip_holding_period.png", scale=2)
