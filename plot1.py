@@ -223,7 +223,7 @@ fig.update_layout(
 )
 
 fig.add_annotation(
-    text="Nifty 50 monthly closes, Aug 1991 – Aug 2026  ·  price index only, dividends excluded  ·  no expense ratio or exit load",
+    text="Nifty 50 monthly closes, Aug 1991 – Aug 2026  ·  price index only, dividends excluded  ·  no expense ratio or exit load  ·  cash held at 0% while out of the market",
     showarrow=False, x=1, y=-0.16, xref="paper", yref="paper",
     font=dict(size=10.5, color=MUTED), xanchor="right",
 )
