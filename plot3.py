@@ -52,8 +52,18 @@ def reveal_stats(s, label):
     pct_10yr = (final - ten_ago) / final
     pct_8yr  = (final - eight_ago) / final
     cross = s[s >= 0.03 * final].index[0]
+    cross_loc = s.index.get_loc(cross)
     years_to_reveal = (cross - s.index[0]).days / 365.25      # years IN to the crossing
     years_after     = (s.index[-1] - cross).days / 365.25     # years still to run after it
+
+    assert 0 < years_to_reveal < years_after + years_to_reveal, \
+        f"{label}: years_to_reveal ({years_to_reveal:.1f}) out of range"
+    assert s.loc[cross] >= 0.03 * final, \
+        f"{label}: value at crossing is below the 3% threshold"
+    assert cross_loc == 0 or s.iloc[cross_loc - 1] < 0.03 * final, \
+        f"{label}: month before crossing is not below the 3% threshold"
+    assert abs((years_to_reveal + years_after) - (len(s) - 1) / 12) < 0.2, \
+        f"{label}: years_to_reveal + years_after doesn't add up to the series span"
 
     print(f"--- {label} ---")
     print(f"Final value:                    ₹{final/1e7:.2f} Cr")
