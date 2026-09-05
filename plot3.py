@@ -50,17 +50,18 @@ def reveal_stats(s, label):
     pct_5yr  = (final - five_ago) / final
     pct_10yr = (final - ten_ago) / final
     cross = s[s >= 0.03 * final].index[0]
-    years_to_reveal = (s.index[-1] - cross).days / 365.25
+    years_to_reveal = (cross - s.index[0]).days / 365.25      # years IN to the crossing
+    years_after     = (s.index[-1] - cross).days / 365.25     # years still to run after it
 
     print(f"--- {label} ---")
     print(f"Final value:                    ₹{final/1e7:.2f} Cr")
     print(f"Created in last 5 years:        {pct_5yr:.0%} of it")
     print(f"Created in last 10 years:       {pct_10yr:.0%} of it")
     print(f"Hit 3% of final value in {cross:%b %Y} — "
-          f"{years_to_reveal:.0f} years in, out of {len(s)/12:.0f} total.\n")
+          f"{years_to_reveal:.1f} years in, {years_after:.1f} years still to run.\n")
 
     return dict(final=final, cross=cross, pct_5yr=pct_5yr,
-                years_to_reveal=years_to_reveal)
+                years_to_reveal=years_to_reveal, years_after=years_after)
 
 stats_flat   = reveal_stats(s_flat, "Flat SIP")
 stats_stepup = reveal_stats(s_stepup, "10% Step-up SIP")
@@ -94,8 +95,9 @@ def plot_reveal_panel(ax, s, stats, line_color, title):
                edgecolor=BG, linewidth=1.5)
 
     ax.annotate(
-        f"3% of final value.\n{stats['years_to_reveal']:.0f} years to get here.",
-        xy=(cross, reveal_value), xytext=(25, 45), textcoords='offset points',
+        f"3% of final value.\n{stats['years_to_reveal']:.0f} years in — "
+        f"{stats['years_after']:.0f} still to run.",
+        xy=(cross, reveal_value), xytext=(25, 55), textcoords='offset points',
         color=COL_MARK, fontsize=10, ha='left',
         arrowprops=dict(arrowstyle='-', color=COL_MARK, lw=1, alpha=0.7),
         bbox=dict(boxstyle='round,pad=0.4', facecolor=BG, edgecolor=COL_MARK, alpha=0.9)
